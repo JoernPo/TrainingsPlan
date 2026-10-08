@@ -106,15 +106,52 @@
 
         .sub {
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
             justify-content: space-between;
             padding: 8px 12px;
             gap: 8px
         }
 
-            .sub small {
+        .bt {
+            display: flex;
+            gap: 6px;
+            margin-left: auto
+        }
+
+        #tocur {
+            height: 34px;
+            font-size: 13px
+        }
+
+        button:disabled {
+            opacity: .4
+        }
+
+        .c.l {
+            cursor: pointer
+        }
+
+            .c.l .e {
                 color: var(--mu)
             }
+
+        .c input {
+            width: 76px;
+            height: 28px;
+            border: 1px solid var(--ac);
+            border-radius: 6px;
+            background: var(--card);
+            color: var(--tx);
+            font: 16px inherit;
+            font-family: inherit;
+            text-align: center;
+            padding: 0 4px
+        }
+
+        .sub small {
+            color: var(--mu)
+        }
 
         #mark {
             height: 34px;
@@ -432,7 +469,7 @@
 <body>
     <header><button id="prev" aria-label="Previous week">‹</button><select id="sel" aria-label="Week"></select><button id="next" aria-label="Next week">›</button><button id="cbtn" aria-label="1RM calculator">1RM</button><button id="gear" aria-label="Settings">⚙︎</button></header>
     <section id="calc" class="sec" hidden><h3>1RM calculator</h3><div class="row"><span>Weight</span><input type="text" id="cw" inputmode="decimal" placeholder="e.g. 100"></div><div class="row"><span>Reps</span><input type="text" id="cr" inputmode="numeric" placeholder="e.g. 5"></div><div id="cres"></div></section>
-    <div class="sub"><small id="pos"></small><button id="mark"></button></div>
+    <div class="sub"><small id="pos"></small><span class="bt"><button id="tocur">↩ To current week</button><button id="mark"></button></span></div>
     <main id="main"></main>
     <div id="sheet" hidden></div>
     <script>
@@ -486,7 +523,7 @@
             $('sel').innerHTML = s.map(x => `<option value="${esc(x.n)}"${x === w ? ' selected' : ''}>${esc(x.n)}${S.cur && S.cur.w === x.n ? ' ★' : ''}</option>`).join('');
 
             $('pos').textContent = `${i + 1} of ${s.length}${S.cur ? '' : ' · no current week set'}`;
-            const m = $('mark'); m.className = isCur ? 'on' : ''; m.textContent = isCur ? '★ Current week' : '☆ Mark as current';
+            $('tocur').disabled = !S.cur || S.cur.w === w.n; const m = $('mark'); m.className = isCur ? 'on' : ''; m.textContent = isCur ? '★ Current week' : '☆ Mark as current';
             const unit = S.unit === 'kg' ? 'kg' : 'lbs';
             let h = w.o.map(t => t.length > 160 ? `<details class="wn"><summary>${esc(t.slice(0, 60))}…</summary>${esc(t)}</details>` : `<div class="wn">${esc(t)}</div>`).join('');
             for (const [di, d] of w.d.entries()) {
@@ -496,8 +533,9 @@
                     let c = '';
                     for (const [k, l] of COLS) {
                         if (!S.cols[k] || k === 'o') continue;
-                        const v = k === 'load' ? getLoad(e) : e[k]; if (!v) continue;
-                        c += `<div class="c${k === 'load' ? ' l' : ''}"><i>${k === 'load' ? unit : l.replace(' sets', '').replace('Warm-up', 'Warm')}</i><b>${esc(v)}</b></div>`;
+                        if (k === 'load') { const v = getLoad(e); c += `<div class="c l" data-ed="${esc(favKey(e.n))}"${e.b ? ' data-p="1"' : ''}><i>${unit}</i><b${v ? '' : ' class="e"'}>${esc(v || '–')}</b></div>`; continue }
+                        const v = e[k]; if (!v) continue;
+                        c += `<div class="c"><i>${l.replace(' sets', '').replace('Warm-up', 'Warm')}</i><b>${esc(v)}</b></div>`;
                     }
                     const fk = favKey(e.n), fv = S.fav.includes(fk);
                     h += `<div class="ex"><div class="nm"><button class="fv${fv ? ' on' : ''}" data-fk="${esc(fk)}" aria-label="Favorite">${fv ? '★' : '☆'}</button>${esc(e.n)}</div><div class="cells">${c}</div>${S.cols.o && e.o ? `<div class="nt">${esc(e.o)}</div>` : ''}</div>`;
@@ -511,7 +549,19 @@
         function toast(t) { const e = document.createElement('div'); e.id = 'toast'; e.textContent = t; document.body.appendChild(e); setTimeout(() => e.remove(), 3500) }
         function tick() { if (checkWeek()) { go(S.cur.w, true); toast('New week → ' + S.cur.w) } }
         $('prev').onclick = () => step(-1); $('next').onclick = () => step(1);
-        $('main').addEventListener('click', e => { const b = e.target.closest('.fv'); if (!b) return; toggleFav(b.dataset.fk); render() });
+        $('main').addEventListener('click', e => {
+            const b = e.target.closest('.fv'); if (b) { toggleFav(b.dataset.fk); render(); return }
+            const c = e.target.closest('.c.l'); if (c && !c.querySelector('input')) editLoad(c)
+        });
+        function editLoad(c) {
+            const fk = c.dataset.ed, p = c.dataset.p;
+            c.innerHTML = `<i>${p ? '1RM ' : ''}${S.unit}</i><input type="text" value="${esc(S.ex[fk] || '')}" placeholder="–">`;
+            const i = c.querySelector('input'); i.focus(); i.select(); let done = 0;
+            const fin = ok => { if (done) return; done = 1; if (ok) { const v = i.value.trim(); v ? S.ex[fk] = v : delete S.ex[fk]; save() } render() };
+            i.onkeydown = e => { if (e.key === 'Enter') fin(1); else if (e.key === 'Escape') fin(0) };
+            i.onblur = () => fin(1);
+        }
+        $('tocur').onclick = () => { if (S.cur) go(S.cur.w, true) };
         $('sel').onchange = e => go(e.target.value);
         $('mark').onclick = () => { if (S.cur && S.cur.w === S.view) S.cur = null; else { S.cur = { w: S.view, mon: iso(monday()) }; delete S.fold[S.view] } render() };
         $('main').addEventListener('toggle', e => { const t = e.target; if (!t.classList || !t.classList.contains('day')) return; const w = t.dataset.w, d = t.dataset.d, f = S.fold[w] || {}; if (t.open) delete f[d]; else f[d] = 1; if (Object.keys(f).length) S.fold[w] = f; else delete S.fold[w]; save() }, true);
