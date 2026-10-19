@@ -55,7 +55,7 @@ details:not([open])>summary::after{content:"▸"}
 .seg{display:flex}.seg button{border-radius:0;height:34px}.seg button:first-child{border-radius:8px 0 0 8px}.seg button:last-child{border-radius:0 8px 8px 0}
 .seg .on{background:var(--ac);color:var(--act);border-color:var(--ac)}
 #calc[hidden]{display:none}#calc .row input{width:110px}.res{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;border-top:1px solid var(--ln)}.res b{font-size:18px;color:var(--ac)}.res small{color:var(--mu)}#cbtn{font-weight:700;font-size:13px}#cbtn.on{background:var(--ac);color:var(--act);border-color:var(--ac)}
-.fv{border:0;background:none;height:auto;width:auto;padding:0 6px 0 0;font-size:17px;line-height:1;color:var(--mu);vertical-align:-1px}.fv.on{color:var(--ac)}.row .fv{font-size:21px;padding:2px 4px}.row .g{flex:1;min-width:0}
+.gi{text-decoration:none;margin-left:6px;font-size:13px;opacity:.8}.fv{border:0;background:none;height:auto;width:auto;padding:0 6px 0 0;font-size:17px;line-height:1;color:var(--mu);vertical-align:-1px}.fv.on{color:var(--ac)}.row .fv{font-size:21px;padding:2px 4px}.row .g{flex:1;min-width:0}
 #q{width:100%;height:38px;border:1px solid var(--ln);border-radius:8px;padding:0 10px;background:var(--bg);color:var(--tx);font:inherit;margin:6px 0}
 #toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:20px;z-index:20;font-weight:600}
 </style></head><body>
@@ -71,17 +71,17 @@ const COLS=[['w','Warm-up sets'],['s','Working sets'],['r','Reps'],['load','Load
 const SEED={Squat:'140',Bench:'107',Deadlift:'141',OHP:'63'};
 const MAINS=[['squat','Squat'],['bench','Bench'],['deadlift','Deadlift'],['ohp','OHP']];
 const ALIAS={'back squat':'squat','low-bar back squat':'squat','barbell bench press':'bench','deadlift':'deadlift','overhead press':'ohp','overhead press / push press':'ohp'};
-const DEF={v:2,unit:'kg',comma:/^de/i.test(navigator.language||''),cols:{w:0,s:1,r:1,load:1,c:0,q:1,t:0,o:0},ex:{},fav:['squat','bench','deadlift','ohp'],opt:'A',cur:null,view:null,fold:{}};
+const DEF={v:2,img:true,unit:'kg',comma:/^de/i.test(navigator.language||''),cols:{w:0,s:1,r:1,load:1,c:0,q:1,t:0,o:0},ex:{},fav:['squat','bench','deadlift','ohp'],opt:'A',cur:null,view:null,fold:{}};
 let S=loadS();
 function loadS(){let s=null;try{s=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){}
-  const o=JSON.parse(JSON.stringify(DEF));if(!s)return o;
-  Object.assign(o,s,{cols:{...DEF.cols,...s.cols},ex:{...(s.ex||{})},fav:Array.isArray(s.fav)?s.fav:DEF.fav.slice(),fold:{...(s.fold||{})}});
-  if(s.v!==2){
-    for(const [k,n] of MAINS){const m=s.main&&s.main[n];if(m&&m!==SEED[n]&&!o.ex[k])o.ex[k]=m}
-    if(o.ex['langhantel unterarm curls']==='22,5 x 7')delete o.ex['langhantel unterarm curls'];
-    for(const a in ALIAS){if(o.ex[a]){const mk=ALIAS[a];if(!o.ex[mk])o.ex[mk]=o.ex[a];delete o.ex[a]}}
-    delete o.main;o.v=2}
-  return o}
+const o=JSON.parse(JSON.stringify(DEF));if(!s)return o;
+Object.assign(o,s,{cols:{...DEF.cols,...s.cols},ex:{...(s.ex||{})},fav:Array.isArray(s.fav)?s.fav:DEF.fav.slice(),fold:{...(s.fold||{})}});
+if(s.v!==2){
+for(const [k,n] of MAINS){const m=s.main&&s.main[n];if(m&&m!==SEED[n]&&!o.ex[k])o.ex[k]=m}
+if(o.ex['langhantel unterarm curls']==='22,5 x 7')delete o.ex['langhantel unterarm curls'];
+for(const a in ALIAS){if(o.ex[a]){const mk=ALIAS[a];if(!o.ex[mk])o.ex[mk]=o.ex[a];delete o.ex[a]}}
+delete o.main;o.v=2}
+return o}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -93,43 +93,42 @@ const fmt=n=>{const t=String(Math.round(n*100)/100);return S.comma?t.replace('.'
 function monday(d=new Date()){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-(x.getDay()+6)%7);return x}
 const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 function getLoad(e){
-  const fk=favKey(e.n);
-  if(e.b){let b=num(S.ex[fk]);if(isNaN(b))b=num(S.ex[e.b.toLowerCase()]);if(isNaN(b))return '–';
-    const st=S.unit==='kg'?2.5:5;return e.p.map(p=>fmt(Math.round(b*p/st)*st)).join('–')}
-  return (S.ex[fk]||'').trim();
+const fk=favKey(e.n);
+if(e.b){let b=num(S.ex[fk]);if(isNaN(b))b=num(S.ex[e.b.toLowerCase()]);if(isNaN(b))return '–';
+const st=S.unit==='kg'?2.5:5;return e.p.map(p=>fmt(Math.round(b*p/st)*st)).join('–')}
+return (S.ex[fk]||'').trim();
 }
 function checkWeek(){
-  if(!S.cur)return false;const s=seq();let i=s.findIndex(w=>w.n===S.cur.w);if(i<0)i=0;
-  const diff=Math.round((monday()-new Date(S.cur.mon+'T00:00:00'))/604800000);
-  if(diff>0){const n=s.length,ni=(i+diff)%n;for(let j=1;j<=Math.min(diff,n);j++)delete S.fold[s[(i+j)%n].n];S.cur={w:s[ni].n,mon:iso(monday())};S.view=S.cur.w;save();return true}
-  return false;
+if(!S.cur)return false;const s=seq();let i=s.findIndex(w=>w.n===S.cur.w);if(i<0)i=0;
+const diff=Math.round((monday()-new Date(S.cur.mon+'T00:00:00'))/604800000);
+if(diff>0){const n=s.length,ni=(i+diff)%n;for(let j=1;j<=Math.min(diff,n);j++)delete S.fold[s[(i+j)%n].n];S.cur={w:s[ni].n,mon:iso(monday())};S.view=S.cur.w;save();return true}
+return false;
 }
 function render(){
-  const s=seq();let i=s.findIndex(w=>w.n===S.view);if(i<0)i=Math.max(0,s.findIndex(w=>S.cur&&w.n===S.cur.w));
-  const w=s[i];S.view=w.n;const isCur=S.cur&&S.cur.w===w.n;
-  $('sel').innerHTML=s.map(x=>`<option value="${esc(x.n)}"${x===w?' selected':''}>${esc(x.n)}${S.cur&&S.cur.w===x.n?' ★':''}</option>`).join('');
-  
-  $('pos').textContent=`${i+1} of ${s.length}${S.cur?'':' · no current week set'}`;
-  $('tocur').disabled=!S.cur||S.cur.w===w.n;const m=$('mark');m.className=isCur?'on':'';m.textContent=isCur?'★ Current week':'☆ Mark as current';
-  const unit=S.unit==='kg'?'kg':'lbs';
-  let h=w.o.map(t=>t.length>160?`<details class="wn"><summary>${esc(t.slice(0,60))}…</summary>${esc(t)}</details>`:`<div class="wn">${esc(t)}</div>`).join('');
-  for(const [di,d] of w.d.entries()){
-    if(d.r){h+=`<div class="rest">${esc(d.n)}</div>`;continue}
-    h+=`<details class="day" data-w="${esc(w.n)}" data-d="${di}"${(S.fold[w.n]||{})[di]?'':' open'}><summary>${esc(d.n)}</summary>`;
-    for(const e of d.e){
-      let c='';
-      for(const [k,l] of COLS){
-        if(!S.cols[k]||k==='o')continue;
-        if(k==='load'){const v=getLoad(e);c+=`<div class="c l" data-ed="${esc(favKey(e.n))}"${e.b?' data-p="1"':''}><i>${unit}</i><b${v?'':' class="e"'}>${esc(v||'–')}</b></div>`;continue}
-        const v=e[k];if(!v)continue;
-        c+=`<div class="c"><i>${l.replace(' sets','').replace('Warm-up','Warm')}</i><b>${esc(v)}</b></div>`;
-      }
-      const fk=favKey(e.n),fv=S.fav.includes(fk);
-      h+=`<div class="ex"><div class="nm"><button class="fv${fv?' on':''}" data-fk="${esc(fk)}" aria-label="Favorite">${fv?'★':'☆'}</button>${esc(e.n)}</div><div class="cells">${c}</div>${S.cols.o&&e.o?`<div class="nt">${esc(e.o)}</div>`:''}</div>`;
-    }
-    h+='</details>';
-  }
-  $('main').innerHTML=h;save();
+const s=seq();let i=s.findIndex(w=>w.n===S.view);if(i<0)i=Math.max(0,s.findIndex(w=>S.cur&&w.n===S.cur.w));
+const w=s[i];S.view=w.n;const isCur=S.cur&&S.cur.w===w.n;
+$('sel').innerHTML=s.map(x=>`<option value="${esc(x.n)}"${x===w?' selected':''}>${esc(x.n)}${S.cur&&S.cur.w===x.n?' ★':''}</option>`).join('');
+$('pos').textContent=`${i+1} of ${s.length}${S.cur?'':' · no current week set'}`;
+$('tocur').disabled=!S.cur||S.cur.w===w.n;const m=$('mark');m.className=isCur?'on':'';m.textContent=isCur?'★ Current week':'☆ Mark as current';
+const unit=S.unit==='kg'?'kg':'lbs';
+let h=w.o.map(t=>t.length>160?`<details class="wn"><summary>${esc(t.slice(0,60))}…</summary>${esc(t)}</details>`:`<div class="wn">${esc(t)}</div>`).join('');
+for(const [di,d] of w.d.entries()){
+if(d.r){h+=`<div class="rest">${esc(d.n)}</div>`;continue}
+h+=`<details class="day" data-w="${esc(w.n)}" data-d="${di}"${(S.fold[w.n]||{})[di]?'':' open'}><summary>${esc(d.n)}</summary>`;
+for(const e of d.e){
+let c='';
+for(const [k,l] of COLS){
+if(!S.cols[k]||k==='o')continue;
+if(k==='load'){const v=getLoad(e);c+=`<div class="c l" data-ed="${esc(favKey(e.n))}"${e.b?' data-p="1"':''}><i>${unit}</i><b${v?'':' class="e"'}>${esc(v||'–')}</b></div>`;continue}
+const v=e[k];if(!v)continue;
+c+=`<div class="c"><i>${l.replace(' sets','').replace('Warm-up','Warm')}</i><b>${esc(v)}</b></div>`;
+}
+const fk=favKey(e.n),fv=S.fav.includes(fk);
+h+=`<div class="ex"><div class="nm"><button class="fv${fv?' on':''}" data-fk="${esc(fk)}" aria-label="Favorite">${fv?'★':'☆'}</button>${esc(e.n)}${S.img?`<a class="gi" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(e.n.replace(/^[A-Z]\d\.\s*/,''))}" target="_blank" rel="noopener" aria-label="Google Images">🔍</a>`:''}</div><div class="cells">${c}</div>${S.cols.o&&e.o?`<div class="nt">${esc(e.o)}</div>`:''}</div>`;
+}
+h+='</details>';
+}
+$('main').innerHTML=h;save();
 }
 function go(n,smooth){S.view=n;render();scrollTo({top:0,behavior:smooth?'smooth':'auto'})}
 function step(d){const s=seq(),n=s.length;let i=s.findIndex(w=>w.n===S.view);i=((i<0?0:i)+d+n)%n;go(s[i].n)}
@@ -137,15 +136,15 @@ function toast(t){const e=document.createElement('div');e.id='toast';e.textConte
 function tick(){if(checkWeek()){go(S.cur.w,true);toast('New week → '+S.cur.w)}}
 $('prev').onclick=()=>step(-1);$('next').onclick=()=>step(1);
 $('main').addEventListener('click',e=>{
-  const b=e.target.closest('.fv');if(b){toggleFav(b.dataset.fk);render();return}
-  const c=e.target.closest('.c.l');if(c&&!c.querySelector('input'))editLoad(c)});
+const b=e.target.closest('.fv');if(b){toggleFav(b.dataset.fk);render();return}
+const c=e.target.closest('.c.l');if(c&&!c.querySelector('input'))editLoad(c)});
 function editLoad(c){
-  const fk=c.dataset.ed,p=c.dataset.p;
-  c.innerHTML=`<i>${p?'1RM ':''}${S.unit}</i><input type="text" value="${esc(S.ex[fk]||'')}" placeholder="–">`;
-  const i=c.querySelector('input');i.focus();i.select();let done=0;
-  const fin=ok=>{if(done)return;done=1;if(ok){const v=i.value.trim();v?S.ex[fk]=v:delete S.ex[fk];save()}render()};
-  i.onkeydown=e=>{if(e.key==='Enter')fin(1);else if(e.key==='Escape')fin(0)};
-  i.onblur=()=>fin(1);
+const fk=c.dataset.ed,p=c.dataset.p;
+c.innerHTML=`<i>${p?'1RM ':''}${S.unit}</i><input type="text" value="${esc(S.ex[fk]||'')}" placeholder="–">`;
+const i=c.querySelector('input');i.focus();i.select();let done=0;
+const fin=ok=>{if(done)return;done=1;if(ok){const v=i.value.trim();v?S.ex[fk]=v:delete S.ex[fk];save()}render()};
+i.onkeydown=e=>{if(e.key==='Enter')fin(1);else if(e.key==='Escape')fin(0)};
+i.onblur=()=>fin(1);
 }
 $('tocur').onclick=()=>{if(S.cur)go(S.cur.w,true)};
 $('sel').onchange=e=>go(e.target.value);
@@ -156,16 +155,15 @@ document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[
 document.addEventListener('touchend',e=>{if($('sheet').hidden===false)return;const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;if(Math.abs(dx)>70&&Math.abs(dy)<45)step(dx<0?1:-1)},{passive:true});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick()});
 setInterval(tick,60000);
-
 // 1RM calculator
 const MODELS=[['Epley','w·(1 + r/30)',(w,r)=>w*(1+r/30)],['Brzycki','w·36 / (37 − r)',(w,r)=>r<37?w*36/(37-r):NaN],['Lombardi','w·r^0.10',(w,r)=>w*Math.pow(r,0.1)]];
 function calc(){
-  const w=num($('cw').value),r=num($('cr').value),o=$('cres');
-  if(isNaN(w)||isNaN(r)||w<=0||r<1){o.innerHTML='<div class="res"><small>Enter weight and reps (1–36).</small></div>';return}
-  const v=MODELS.map(m=>[m[0],m[1],r===1?w:m[2](w,r)]).filter(x=>isFinite(x[2]));
-  const f1=n=>{const t=(Math.round(n*10)/10).toString();return S.comma?t.replace('.',','):t};
-  o.innerHTML=v.map(x=>`<div class="res"><span>${x[0]}<br><small>${x[1]}</small></span><b>${f1(x[2])} ${S.unit}</b></div>`).join('')+
-   (v.length>1?`<div class="res"><span>Average</span><b>${f1(v.reduce((a,x)=>a+x[2],0)/v.length)} ${S.unit}</b></div>`:'')+(r>10?'<div class="res"><small>Estimates get less accurate above ~10 reps.</small></div>':'');
+const w=num($('cw').value),r=num($('cr').value),o=$('cres');
+if(isNaN(w)||isNaN(r)||w<=0||r<1){o.innerHTML='<div class="res"><small>Enter weight and reps (1–36).</small></div>';return}
+const v=MODELS.map(m=>[m[0],m[1],r===1?w:m[2](w,r)]).filter(x=>isFinite(x[2]));
+const f1=n=>{const t=(Math.round(n*10)/10).toString();return S.comma?t.replace('.',','):t};
+o.innerHTML=v.map(x=>`<div class="res"><span>${x[0]}<br><small>${x[1]}</small></span><b>${f1(x[2])} ${S.unit}</b></div>`).join('')+
+(v.length>1?`<div class="res"><span>Average</span><b>${f1(v.reduce((a,x)=>a+x[2],0)/v.length)} ${S.unit}</b></div>`:'')+(r>10?'<div class="res"><small>Estimates get less accurate above ~10 reps.</small></div>':'');
 }
 $('cbtn').onclick=()=>{const p=$('calc');p.hidden=!p.hidden;$('cbtn').className=p.hidden?'':'on';if(!p.hidden){calc();$('cw').focus()}};
 $('cw').oninput=$('cr').oninput=calc;
@@ -175,39 +173,40 @@ for(const w of D)for(const d of w.d)for(const e of d.e){const k=favKey(e.n);if(!
 function toggleFav(k){const i=S.fav.indexOf(k);if(i<0)S.fav.push(k);else S.fav.splice(i,1);save()}
 function srow(k,fav){const v=exMap.get(k);return `<div class="row"><button class="fv${fav?' on':''}" data-sfk="${esc(k)}" aria-label="Favorite">${fav?'★':'☆'}</button><div class="g">${esc(v.n)}<small>${v.main?'main lift · base for % weights':v.pct?'% of 1RM · empty = main lift':'fixed weight / note'}</small></div><input type="text" data-ex="${esc(k)}" value="${esc(S.ex[k]||'')}" placeholder="–"></div>`}
 function lists(){
-  const q=($('q')?$('q').value:'').trim().toLowerCase();
-  const f=S.fav.filter(k=>exMap.has(k));
-  $('favl').innerHTML=f.length?f.map(k=>srow(k,true)).join(''):'<small>No favorites yet – tap ☆ on an exercise.</small>';
-  $('exl').innerHTML=[...exMap].filter(([k,v])=>!S.fav.includes(k)&&(!q||v.n.toLowerCase().includes(q))).sort((a,b)=>a[1].n.localeCompare(b[1].n)).map(([k])=>srow(k,false)).join('');
+const q=($('q')?$('q').value:'').trim().toLowerCase();
+const f=S.fav.filter(k=>exMap.has(k));
+$('favl').innerHTML=f.length?f.map(k=>srow(k,true)).join(''):'<small>No favorites yet – tap ☆ on an exercise.</small>';
+$('exl').innerHTML=[...exMap].filter(([k,v])=>!S.fav.includes(k)&&(!q||v.n.toLowerCase().includes(q))).sort((a,b)=>a[1].n.localeCompare(b[1].n)).map(([k])=>srow(k,false)).join('');
 }
 function openSettings(){
-  const sh=$('sheet');
-  sh.innerHTML=`<div class="sh"><h2>Settings</h2><button id="done">Done</button></div>
-  <div class="sec"><h3>General</h3>
-   <div class="row"><span>Unit</span><div class="seg" data-seg="unit"><button data-v="kg" class="${S.unit==='kg'?'on':''}">kg</button><button data-v="lbs" class="${S.unit==='lbs'?'on':''}">lbs</button></div></div>
-   <div class="row"><span>Decimal comma (112,5)</span><input type="checkbox" data-flag="comma" ${S.comma?'checked':''}></div>
-   <div class="row"><span>Max-test week<small>Week 10A or 10B in the sequence</small></span><div class="seg" data-seg="opt"><button data-v="A" class="${S.opt==='A'?'on':''}">10A</button><button data-v="B" class="${S.opt==='B'?'on':''}">10B</button></div></div></div>
-  <div class="sec"><h3>Columns</h3>${COLS.map(([k,l])=>`<div class="row"><span>${l==='Load'?'Load (weight)':l}</span><input type="checkbox" data-col="${k}" ${S.cols[k]?'checked':''}></div>`).join('')}</div>
-  <div class="sec"><h3>★ Favorites (${S.unit})</h3><small style="color:var(--mu)">Main lifts are favorites by default. Enter a 1RM for %-based exercises, or a fixed weight / note otherwise (e.g. “22,5 x 7”). Tap the star to add or remove a favorite.</small><div id="favl"></div></div>
-  <div class="sec"><h3>1RM / weight per exercise</h3><input id="q" type="search" placeholder="Search exercise…"><div id="exl"></div></div>
-  <div class="sec"><div class="row"><span>Reset all settings</span><button id="reset">Reset</button></div></div>`;
-  lists();sh.hidden=false;document.body.style.overflow='hidden';sh.scrollTop=0;
+const sh=$('sheet');
+sh.innerHTML=`<div class="sh"><h2>Settings</h2><button id="done">Done</button></div>
+<div class="sec"><h3>General</h3>
+<div class="row"><span>Unit</span><div class="seg" data-seg="unit"><button data-v="kg" class="${S.unit==='kg'?'on':''}">kg</button><button data-v="lbs" class="${S.unit==='lbs'?'on':''}">lbs</button></div></div>
+<div class="row"><span>Image search button 🔍<small>Opens Google Images for the exercise</small></span><input type="checkbox" data-flag="img" ${S.img?'checked':''}></div>
+<div class="row"><span>Decimal comma (112,5)</span><input type="checkbox" data-flag="comma" ${S.comma?'checked':''}></div>
+<div class="row"><span>Max-test week<small>Week 10A or 10B in the sequence</small></span><div class="seg" data-seg="opt"><button data-v="A" class="${S.opt==='A'?'on':''}">10A</button><button data-v="B" class="${S.opt==='B'?'on':''}">10B</button></div></div></div>
+<div class="sec"><h3>Columns</h3>${COLS.map(([k,l])=>`<div class="row"><span>${l==='Load'?'Load (weight)':l}</span><input type="checkbox" data-col="${k}" ${S.cols[k]?'checked':''}></div>`).join('')}</div>
+<div class="sec"><h3>★ Favorites (${S.unit})</h3><small style="color:var(--mu)">Main lifts are favorites by default. Enter a 1RM for %-based exercises, or a fixed weight / note otherwise (e.g. “22,5 x 7”). Tap the star to add or remove a favorite.</small><div id="favl"></div></div>
+<div class="sec"><h3>1RM / weight per exercise</h3><input id="q" type="search" placeholder="Search exercise…"><div id="exl"></div></div>
+<div class="sec"><div class="row"><span>Reset all settings</span><button id="reset">Reset</button></div></div>`;
+lists();sh.hidden=false;document.body.style.overflow='hidden';sh.scrollTop=0;
 }
 $('gear').onclick=openSettings;
 $('sheet').addEventListener('input',e=>{const t=e.target;
-  if(t.id==='q'){lists();return}
-  if(t.dataset.ex!==undefined){const v=t.value.trim();v?S.ex[t.dataset.ex]=v:delete S.ex[t.dataset.ex]}
-  else if(t.dataset.col)S.cols[t.dataset.col]=t.checked?1:0;
-  else if(t.dataset.flag)S[t.dataset.flag]=t.checked;
-  save()});
+if(t.id==='q'){lists();return}
+if(t.dataset.ex!==undefined){const v=t.value.trim();v?S.ex[t.dataset.ex]=v:delete S.ex[t.dataset.ex]}
+else if(t.dataset.col)S.cols[t.dataset.col]=t.checked?1:0;
+else if(t.dataset.flag)S[t.dataset.flag]=t.checked;
+save()});
 $('sheet').addEventListener('click',e=>{const t=e.target;
-  const sf=t.closest('[data-sfk]');if(sf){toggleFav(sf.dataset.sfk);lists();return}
-  if(t.id==='done'){$('sheet').hidden=true;document.body.style.overflow='';render();return}
-  if(t.id==='reset'){if(confirm('Reset all settings and the current week?')){S=JSON.parse(JSON.stringify(DEF));save();openSettings()}return}
-  const seg=t.closest('[data-seg]');if(seg&&t.dataset.v){const k=seg.dataset.seg;S[k]=t.dataset.v;
-    if(k==='opt'&&S.cur&&/^Week 10[AB]$/.test(S.cur.w))S.cur.w='Week 10'+t.dataset.v;
-    if(k==='opt'&&/^Week 10[AB]$/.test(S.view||''))S.view='Week 10'+t.dataset.v;
-    save();seg.querySelectorAll('button').forEach(b=>b.className=b.dataset.v===t.dataset.v?'on':'')}});
+const sf=t.closest('[data-sfk]');if(sf){toggleFav(sf.dataset.sfk);lists();return}
+if(t.id==='done'){$('sheet').hidden=true;document.body.style.overflow='';render();return}
+if(t.id==='reset'){if(confirm('Reset all settings and the current week?')){S=JSON.parse(JSON.stringify(DEF));save();openSettings()}return}
+const seg=t.closest('[data-seg]');if(seg&&t.dataset.v){const k=seg.dataset.seg;S[k]=t.dataset.v;
+if(k==='opt'&&S.cur&&/^Week 10[AB]$/.test(S.cur.w))S.cur.w='Week 10'+t.dataset.v;
+if(k==='opt'&&/^Week 10[AB]$/.test(S.view||''))S.view='Week 10'+t.dataset.v;
+save();seg.querySelectorAll('button').forEach(b=>b.className=b.dataset.v===t.dataset.v?'on':'')}});
 checkWeek();render();
 if(S.cur&&S.view===S.cur.w)scrollTo(0,0);
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
